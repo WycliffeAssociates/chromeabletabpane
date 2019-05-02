@@ -19,7 +19,9 @@
 
 package org.wycliffeassociates.controls;
 
-import com.jfoenix.skins.JFXTabPaneSkin;
+import com.jfoenix.controls.JFXTabPane;
+import javafx.scene.Node;
+import org.wycliffeassociates.skins.ChromeableTabPaneSkin;
 import com.sun.javafx.css.converters.BooleanConverter;
 import javafx.css.CssMetaData;
 import javafx.css.SimpleStyleableBooleanProperty;
@@ -29,21 +31,18 @@ import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.MouseEvent;
-import org.wycliffeassociates.skins.ChromeableTabPaneSkin;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * JFXTabPane is the material design implementation of a tab pane.
+ * ChromeableTabPane is a modification of the JFoenix Material design TabPane that allows for
+ * inserting a node to fit in the tab pane header.
  *
- * TODO: REWORK SWITCH ANIMATION
- * @author Shadi Shaheen
- * @version 1.0
- * @since 2016-03-09
+ * Based on the JFXTabPane from github.com/jfoenixadmin/jfoenix by Shadi Shaheen
  */
-public class ChromeableTabPane extends TabPane {
+public class ChromeableTabPane extends JFXTabPane {
     /**
      * Initialize the style class to 'jfx-tab-pane'.
      * <p>
@@ -51,7 +50,10 @@ public class ChromeableTabPane extends TabPane {
      * this control.
      */
     private static final String DEFAULT_STYLE_CLASS = "jfx-tab-pane";
-    private static final String USER_AGENT_STYLESHEET = ChromeableTabPane.class.getResource("/css/controls/jfx-tab-pane.css").toExternalForm();
+
+    private Node chrome = null;
+
+    private double headerScalingFactor = 1.0;
 
     /**
      * {@inheritDoc}
@@ -62,90 +64,35 @@ public class ChromeableTabPane extends TabPane {
 
     /**
      * {@inheritDoc}
+     *
+     * @param headerScalingFactor a scaling factor to reduce the width of the TabPane Header
      */
-    @Override
-    protected Skin<?> createDefaultSkin() {
-        return new ChromeableTabPaneSkin(this);
+    public ChromeableTabPane(double headerScalingFactor) {
+        this.headerScalingFactor = Math.min(Math.max(headerScalingFactor, 0.0), 1.0);
+        initialize();
     }
 
-    private void initialize() {
-        this.getStyleClass().setAll(DEFAULT_STYLE_CLASS);
-        this.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
+    /**
+     * {@inheritDoc}
+     *
+     * @param headerScalingFactor a scaling factor to reduce the width of the TabPane Header
+     */
+    public ChromeableTabPane(Node chrome, double headerScalingFactor) {
+        this.headerScalingFactor = Math.min(Math.max(headerScalingFactor, 0.0), 1.0);
+        this.chrome = chrome;
+        initialize();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getUserAgentStylesheet() {
-        return USER_AGENT_STYLESHEET;
+    protected Skin<?> createDefaultSkin() {
+        return new ChromeableTabPaneSkin(this, chrome, headerScalingFactor);
     }
 
-    /**
-     * propagate any mouse events on the tab pane to its parent
-     */
-    public void propagateMouseEventsToParent() {
-        this.addEventHandler(MouseEvent.ANY, e -> {
-            e.consume();
-            this.getParent().fireEvent(e);
-        });
+    private void initialize() {
+        this.getStyleClass().setAll(DEFAULT_STYLE_CLASS);
+        this.setTabClosingPolicy(TabClosingPolicy.UNAVAILABLE);
     }
-
-    /**
-     * disable animation on validation
-     */
-    private StyleableBooleanProperty disableAnimation = new SimpleStyleableBooleanProperty(ChromeableTabPane.StyleableProperties.DISABLE_ANIMATION,
-            ChromeableTabPane.this,
-            "disableAnimation",
-            false);
-
-    public final StyleableBooleanProperty disableAnimationProperty() {
-        return this.disableAnimation;
-    }
-
-    public final Boolean isDisableAnimation() {
-        return disableAnimation != null && this.disableAnimationProperty().get();
-    }
-
-    public final void setDisableAnimation(final Boolean disabled) {
-        this.disableAnimationProperty().set(disabled);
-    }
-
-    private static class StyleableProperties {
-        private static final CssMetaData<ChromeableTabPane, Boolean> DISABLE_ANIMATION =
-                new CssMetaData<ChromeableTabPane, Boolean>("-jfx-disable-animation",
-                        BooleanConverter.getInstance(), false) {
-                    @Override
-                    public boolean isSettable(ChromeableTabPane control) {
-                        return control.disableAnimation == null || !control.disableAnimation.isBound();
-                    }
-
-                    @Override
-                    public StyleableBooleanProperty getStyleableProperty(ChromeableTabPane control) {
-                        return control.disableAnimationProperty();
-                    }
-                };
-
-        private static final List<CssMetaData<? extends Styleable, ?>> CHILD_STYLEABLES;
-
-        static {
-            final List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(
-                    TabPane.getClassCssMetaData());
-            Collections.addAll(styleables, DISABLE_ANIMATION);
-            CHILD_STYLEABLES = Collections.unmodifiableList(styleables);
-        }
-    }
-
-    // inherit the styleable properties from parent
-    private List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
-
-    @Override
-    public List<CssMetaData<? extends Styleable, ?>> getControlCssMetaData() {
-        return getClassCssMetaData();
-    }
-
-    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
-        return ChromeableTabPane.StyleableProperties.CHILD_STYLEABLES;
-    }
-
 }
