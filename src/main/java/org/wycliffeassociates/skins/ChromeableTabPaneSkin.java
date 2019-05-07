@@ -94,7 +94,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
 
         tabContentHolders = FXCollections.observableArrayList();
         header = new HeaderContainer();
-        getChildren().add(JFXDepthManager.createMaterialNode(header, 1));
+        getChildren().add(JFXDepthManager.createMaterialNode(header, 0));
 
         if(chrome != null) {
             getChildren().add(1, chrome);
@@ -467,6 +467,9 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
                         if (child instanceof TabHeaderContainer) {
                             height = Math.max(height, child.prefHeight(width));
                         }
+                    }
+                    if(chrome != null) {
+                        height = Math.max(height, chrome.prefHeight(width));
                     }
                     return snapSize(height) + snappedTopInset() + snappedBottomInset();
                 }
