@@ -27,9 +27,8 @@ import com.jfoenix.controls.JFXTabPane;
 import com.jfoenix.effects.JFXDepthManager;
 import com.jfoenix.svg.SVGGlyph;
 import com.jfoenix.transitions.CachedTransition;
-import com.sun.javafx.scene.control.MultiplePropertyChangeListenerHandler;
+import com.sun.javafx.scene.control.LambdaMultiplePropertyChangeListenerHandler;
 import com.sun.javafx.scene.control.behavior.TabPaneBehavior;
-import com.sun.javafx.scene.control.skin.BehaviorSkinBase;
 import javafx.animation.*;
 import javafx.beans.InvalidationListener;
 import javafx.beans.WeakInvalidationListener;
@@ -64,10 +63,10 @@ import java.util.List;
 
 /**
  * <h1>Material Design TabPane Skin</h1>
- *
+ * <p>
  * Based on the JFXTabPaneSkin from github.com/jfoenixadmin/jfoenix by Shadi Shaheen
  */
-public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBehavior> {
+public class ChromeableTabPaneSkin extends SkinBase<JFXTabPane> {
 
     private Node chrome;
 
@@ -83,11 +82,13 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
     private static final int SPACER = 10;
     private double maxWidth = 0.0d;
     private double maxHeight = 0.0d;
+    private final TabPaneBehavior behavior;
 
     private double headerScalingFactor = 1.0;
 
-    public ChromeableTabPaneSkin(TabPane tabPane, Node chrome, double headerScalingFactor) {
-        super(tabPane, new TabPaneBehavior(tabPane));
+    public ChromeableTabPaneSkin(JFXTabPane tabPane, Node chrome, double headerScalingFactor) {
+        super(tabPane);
+        behavior = new TabPaneBehavior(tabPane);
 
         this.chrome = chrome;
         this.headerScalingFactor = headerScalingFactor;
@@ -96,7 +97,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
         header = new HeaderContainer();
         getChildren().add(JFXDepthManager.createMaterialNode(header, 0));
 
-        if(chrome != null) {
+        if (chrome != null) {
             getChildren().add(1, chrome);
         }
 
@@ -133,13 +134,13 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
 
         header.headersRegion.setOnMouseDragged(me -> {
             header.updateScrollOffset(offsetStart
-                    + (isHorizontal() ? me.getSceneX() : me .getSceneY())
+                    + (isHorizontal() ? me.getSceneX() : me.getSceneY())
                     - dragStart);
             me.consume();
         });
 
         getSkinnable().addEventHandler(MouseEvent.MOUSE_PRESSED, me -> {
-            dragStart = (isHorizontal() ? me.getSceneX() : me .getSceneY());
+            dragStart = (isHorizontal() ? me.getSceneX() : me.getSceneY());
             offsetStart = header.scrollOffset;
         });
 
@@ -184,27 +185,21 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
             getSkinnable().requestLayout();
         });
 
-        registerChangeListener(tabPane.getSelectionModel().selectedItemProperty(), "SELECTED_TAB");
-        registerChangeListener(tabPane.widthProperty(), "WIDTH");
-        registerChangeListener(tabPane.heightProperty(), "HEIGHT");
-
-    }
-
-    @Override
-    protected void handleControlPropertyChanged(String property) {
-        super.handleControlPropertyChanged(property);
-        if ("SELECTED_TAB".equals(property)) {
+        registerChangeListener(tabPane.getSelectionModel().selectedItemProperty(), obs -> {
             isSelectingTab = true;
             selectedTab = getSkinnable().getSelectionModel().getSelectedItem();
             getSkinnable().requestLayout();
-        } else if ("WIDTH".equals(property)) {
+        });
+        registerChangeListener(tabPane.widthProperty(), obs -> {
             clip.setWidth(getSkinnable().getWidth());
-        } else if ("HEIGHT".equals(property)) {
+        });
+        registerChangeListener(tabPane.heightProperty(), obs -> {
             clip.setHeight(getSkinnable().getHeight());
-        }
+        });
     }
 
     private boolean removedTabs = false;
+
     private void removeTabs(List<? extends Tab> removedTabs) {
         for (Tab tab : removedTabs) {
             TabHeaderContainer tabHeaderContainer = header.getTabHeaderContainer(tab);
@@ -330,8 +325,8 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
         double tabsY = side == Side.BOTTOM ? y + h - headerHeight : y;
         final int rotation = getRotation(side);
 
-        if(chrome != null) {
-            chrome.resize(w * (1-headerScalingFactor), headerHeight);
+        if (chrome != null) {
+            chrome.resize(w * (1 - headerScalingFactor), headerHeight);
             chrome.relocate(w * headerScalingFactor, tabsY);
         }
 
@@ -468,7 +463,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
                             height = Math.max(height, child.prefHeight(width));
                         }
                     }
-                    if(chrome != null) {
+                    if (chrome != null) {
                         height = Math.max(height, chrome.prefHeight(width));
                     }
                     return snapSize(height) + snappedTopInset() + snappedBottomInset();
@@ -662,7 +657,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
         }
 
         private void runTimeline(double newTransX, double newWidth) {
-            if(selectedTabLine.getTranslateX() == newTransX
+            if (selectedTabLine.getTranslateX() == newTransX
                     && scale.getX() == newWidth) return;
 
             double tempScaleX = 0;
@@ -691,9 +686,9 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
 
 
             double midScaleX = tempScaleX != 0 ?
-                    tempScaleX : ((Math.abs(transDiff)/translateScaleFactor + oldWidth) * oldScaleX) / oldWidth;
+                    tempScaleX : ((Math.abs(transDiff) / translateScaleFactor + oldWidth) * oldScaleX) / oldWidth;
 
-            if(midScaleX > Math.abs(transDiff) + newWidth){
+            if (midScaleX > Math.abs(transDiff) + newWidth) {
                 midScaleX = Math.abs(transDiff) + newWidth;
             }
             if (transDiff < 0) {
@@ -890,10 +885,10 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
                 }
             }
             // animate the tab selection
-            if(selectedTabWidth > 0){
+            if (selectedTabWidth > 0) {
                 if (animate) {
                     runTimeline(selectedTabOffset, selectedTabWidth);
-                }else{
+                } else {
                     selectedTabLine.setTranslateX(selectedTabOffset + scrollOffset * direction);
                     scale.setX(selectedTabWidth);
                     selectedTabLineOffset = selectedTabOffset;
@@ -920,11 +915,8 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
         private JFXRippler rippler;
         private boolean isClosing = false;
 
-        private final MultiplePropertyChangeListenerHandler listener =
-                new MultiplePropertyChangeListenerHandler(param -> {
-                    handlePropertyChanged(param);
-                    return null;
-                });
+        private final LambdaMultiplePropertyChangeListenerHandler listener =
+                new LambdaMultiplePropertyChangeListenerHandler();
 
         private final ListChangeListener<String> styleClassListener =
                 (Change<? extends String> change) -> getStyleClass().setAll(tab.getStyleClass());
@@ -944,8 +936,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
 
             closeButton = new JFXButton(null, new SVGGlyph());
             closeButton.getStyleClass().add("tab-close-button");
-            closeButton.setOnAction(action->{
-                TabPaneBehavior behavior = getBehavior();
+            closeButton.setOnAction(action -> {
                 if (behavior.canCloseTab(tab)) {
                     behavior.closeTab(tab);
                     setOnMouseClicked(null);
@@ -967,19 +958,44 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
                 oldTooltip = tooltip;
             }
 
-            listener.registerChangeListener(tab.selectedProperty(), "SELECTED");
-            listener.registerChangeListener(tab.textProperty(), "TEXT");
-            listener.registerChangeListener(tab.graphicProperty(), "GRAPHIC");
-            listener.registerChangeListener(tab.tooltipProperty(), "TOOLTIP");
-            listener.registerChangeListener(tab.disableProperty(), "DISABLE");
-            listener.registerChangeListener(tab.styleProperty(), "STYLE");
-            listener.registerChangeListener(getSkinnable().tabClosingPolicyProperty(), "TAB_CLOSING_POLICY");
-            listener.registerChangeListener(getSkinnable().tabMinWidthProperty(), "TAB_MIN_WIDTH");
-            listener.registerChangeListener(getSkinnable().tabMaxWidthProperty(), "TAB_MAX_WIDTH");
-            listener.registerChangeListener(getSkinnable().tabMinHeightProperty(), "TAB_MIN_HEIGHT");
-            listener.registerChangeListener(getSkinnable().tabMaxHeightProperty(), "TAB_MAX_HEIGHT");
-            listener.registerChangeListener(getSkinnable().sideProperty(), "SIDE");
-            listener.registerChangeListener(widthProperty(), "WIDTH");
+            listener.registerChangeListener(tab.selectedProperty(), obs -> {
+                pseudoClassStateChanged(SELECTED_PSEUDOCLASS_STATE, tab.isSelected());
+                updateInnerUI();
+            });
+            listener.registerChangeListener(tab.textProperty(), obs -> tabLabel.setText(tab.getText()));
+            listener.registerChangeListener(tab.graphicProperty(), obs -> tabLabel.setGraphic(tab.getGraphic()));
+            listener.registerChangeListener(widthProperty(), obs -> header.updateSelectionLine(true));
+            listener.registerChangeListener(tab.tooltipProperty(), obs -> {
+                // install new Toolip/ uninstall the old one
+                if (oldTooltip != null) {
+                    Tooltip.uninstall(this, oldTooltip);
+                }
+                tooltip = tab.getTooltip();
+                if (tooltip != null) {
+                    Tooltip.install(this, tooltip);
+                    oldTooltip = tooltip;
+                }
+            });
+            listener.registerChangeListener(tab.disableProperty(), obs -> {
+                pseudoClassStateChanged(DISABLED_PSEUDOCLASS_STATE, tab.isDisable());
+                updateInnerUI();
+            });
+            listener.registerChangeListener(tab.styleProperty(), obs -> setStyle(tab.getStyle()));
+            listener.registerChangeListener(getSkinnable().tabMinWidthProperty(), obs -> updateSkinnableUI());
+            listener.registerChangeListener(getSkinnable().tabMaxWidthProperty(), obs -> updateSkinnableUI());
+            listener.registerChangeListener(getSkinnable().tabMinHeightProperty(), obs -> updateSkinnableUI());
+            listener.registerChangeListener(getSkinnable().tabMaxHeightProperty(), obs -> updateSkinnableUI());
+            listener.registerChangeListener(getSkinnable().sideProperty(), obs -> {
+                final Side side = getSkinnable().getSide();
+                pseudoClassStateChanged(TOP_PSEUDOCLASS_STATE, (side == Side.TOP));
+                pseudoClassStateChanged(RIGHT_PSEUDOCLASS_STATE, (side == Side.RIGHT));
+                pseudoClassStateChanged(BOTTOM_PSEUDOCLASS_STATE, (side == Side.BOTTOM));
+                pseudoClassStateChanged(LEFT_PSEUDOCLASS_STATE, (side == Side.LEFT));
+                inner.setRotate(side == Side.BOTTOM ? 180.0F : 0.0F);
+            });
+            listener.registerChangeListener(getSkinnable().tabClosingPolicyProperty(), obs -> updateInnerUI());
+
+
             tab.getStyleClass().addListener(weakStyleClassListener);
 
             getProperties().put(Tab.class, tab);
@@ -990,15 +1006,14 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
                 }
                 if (event.getButton() == MouseButton.MIDDLE) {
                     if (showCloseButton()) {
-                        TabPaneBehavior behavior = getBehavior();
                         if (behavior.canCloseTab(tab)) {
                             removeListeners();
                             behavior.closeTab(tab);
                         }
                     }
-                }else if (event.getButton() == MouseButton.PRIMARY) {
+                } else if (event.getButton() == MouseButton.PRIMARY) {
                     setOpacity(1);
-                    getBehavior().selectTab(tab);
+                    behavior.selectTab(tab);
                 }
             });
 
@@ -1021,57 +1036,12 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
             pseudoClassStateChanged(CLOSABLE, showCloseButton());
         }
 
-        private void handlePropertyChanged(final String p) {
-            if ("SELECTED".equals(p)) {
-                pseudoClassStateChanged(SELECTED_PSEUDOCLASS_STATE, tab.isSelected());
-                updateInnerUI();
-            } else if ("TEXT".equals(p)) {
-                tabLabel.setText(tab.getText());
-            } else if ("GRAPHIC".equals(p)) {
-                tabLabel.setGraphic(tab.getGraphic());
-            } else if ("TOOLTIP".equals(p)) {
-                // install new Toolip/ uninstall the old one
-                if (oldTooltip != null) {
-                    Tooltip.uninstall(this, oldTooltip);
-                }
-                tooltip = tab.getTooltip();
-                if (tooltip != null) {
-                    Tooltip.install(this, tooltip);
-                    oldTooltip = tooltip;
-                }
-            } else if ("DISABLE".equals(p)) {
-                pseudoClassStateChanged(DISABLED_PSEUDOCLASS_STATE, tab.isDisable());
-                updateInnerUI();
-            } else if ("STYLE".equals(p)) {
-                setStyle(tab.getStyle());
-            }  else if ("TAB_CLOSING_POLICY".equals(p)) {
-                updateInnerUI();
-            } else if ("TAB_MIN_WIDTH".equals(p)) {
-                updateSkinnableUI();
-            } else if ("TAB_MAX_WIDTH".equals(p)) {
-                updateSkinnableUI();
-            } else if ("TAB_MIN_HEIGHT".equals(p)) {
-                updateSkinnableUI();
-            } else if ("TAB_MAX_HEIGHT".equals(p)) {
-                updateSkinnableUI();
-            } else if ("SIDE".equals(p)) {
-                final Side side = getSkinnable().getSide();
-                pseudoClassStateChanged(TOP_PSEUDOCLASS_STATE, (side == Side.TOP));
-                pseudoClassStateChanged(RIGHT_PSEUDOCLASS_STATE, (side == Side.RIGHT));
-                pseudoClassStateChanged(BOTTOM_PSEUDOCLASS_STATE, (side == Side.BOTTOM));
-                pseudoClassStateChanged(LEFT_PSEUDOCLASS_STATE, (side == Side.LEFT));
-                inner.setRotate(side == Side.BOTTOM ? 180.0F : 0.0F);
-            } else if ("WIDTH".equals(p)) {
-                header.updateSelectionLine(true);
-            }
-        }
-
-        private void updateInnerUI(){
+        private void updateInnerUI() {
             inner.requestLayout();
             requestLayout();
         }
 
-        private void updateSkinnableUI(){
+        private void updateSkinnableUI() {
             requestLayout();
             getSkinnable().requestLayout();
         }
@@ -1133,7 +1103,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
             closeButton.setManaged(showClose);
             closeButton.setVisible(showClose);
             pseudoClassStateChanged(CLOSABLE, showClose);
-            rippler.resizeRelocate(0,0, getWidth(), getHeight());
+            rippler.resizeRelocate(0, 0, getWidth(), getHeight());
         }
     }
 
@@ -1336,5 +1306,4 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
             positionInArea(inner, x, y, width, height, 0, HPos.CENTER, VPos.BOTTOM);
         }
     }
-
 }
