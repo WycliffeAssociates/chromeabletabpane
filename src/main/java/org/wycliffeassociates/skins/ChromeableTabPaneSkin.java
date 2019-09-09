@@ -56,6 +56,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.util.Duration;
+import org.wycliffeassociates.controls.ChromeableTabPane;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -64,9 +65,11 @@ import java.util.List;
 /**
  * <h1>Material Design TabPane Skin</h1>
  *
- * @author Shadi Shaheen
+ * Based on the JFXTabPaneSkin from github.com/jfoenixadmin/jfoenix by Shadi Shaheen
  */
 public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBehavior> {
+
+    private Node chrome;
 
     private HeaderContainer header;
     private ObservableList<TabContentHolder> tabContentHolders;
@@ -81,11 +84,21 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
     private double maxWidth = 0.0d;
     private double maxHeight = 0.0d;
 
-    public ChromeableTabPaneSkin(TabPane tabPane) {
+    private double headerScalingFactor = 1.0;
+
+    public ChromeableTabPaneSkin(TabPane tabPane, Node chrome, double headerScalingFactor) {
         super(tabPane, new TabPaneBehavior(tabPane));
+
+        this.chrome = chrome;
+        this.headerScalingFactor = headerScalingFactor;
+
         tabContentHolders = FXCollections.observableArrayList();
         header = new HeaderContainer();
-        getChildren().add(JFXDepthManager.createMaterialNode(header, 1));
+        getChildren().add(JFXDepthManager.createMaterialNode(header, 0));
+
+        if(chrome != null) {
+            getChildren().add(1, chrome);
+        }
 
         tabsContainer = new AnchorPane();
         tabsContainerHolder = new AnchorPane();
@@ -317,10 +330,15 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
         double tabsY = side == Side.BOTTOM ? y + h - headerHeight : y;
         final int rotation = getRotation(side);
 
+        if(chrome != null) {
+            chrome.resize(w * (1-headerScalingFactor), headerHeight);
+            chrome.relocate(w * headerScalingFactor, tabsY);
+        }
+
         // update header
         switch (side) {
             case TOP:
-                header.resize(w, headerHeight);
+                header.resize(w * headerScalingFactor, headerHeight);
                 header.relocate(tabsX, tabsY);
                 break;
             case LEFT:
@@ -449,6 +467,9 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
                         if (child instanceof TabHeaderContainer) {
                             height = Math.max(height, child.prefHeight(width));
                         }
+                    }
+                    if(chrome != null) {
+                        height = Math.max(height, chrome.prefHeight(width));
                     }
                     return snapSize(height) + snappedTopInset() + snappedBottomInset();
                 }
@@ -710,7 +731,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
 
         private void updateScrollOffset(double newOffset) {
             double tabPaneWidth = snapSize(isHorizontal() ?
-                    getSkinnable().getWidth() : getSkinnable().getHeight());
+                    getSkinnable().getWidth() * headerScalingFactor : getSkinnable().getHeight());
             double controlTabWidth = 2 * snapSize(rightControlButton.getWidth());
             double visibleWidth = tabPaneWidth - controlTabWidth - snappedLeftInset() - SPACER;
 
@@ -783,7 +804,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
             updateHeaderContainerClip();
             headersRegion.requestLayout();
 
-            // layout left/right controls buttons
+            // layout left/right org.wycliffeassociates.controls buttons
             final double btnWidth = snapSize(rightControlButton.prefWidth(-1));
             final double btnHeight = rightControlButton.prefHeight(btnWidth);
             rightControlButton.resize(btnWidth, btnHeight);
@@ -1167,7 +1188,7 @@ public class ChromeableTabPaneSkin extends BehaviorSkinBase<TabPane, TabPaneBeha
 
     /**************************************************************************
      *																		  *
-     * HeaderControl: left/right controls to interact with HeaderContainer*
+     * HeaderControl: left/right org.wycliffeassociates.controls to interact with HeaderContainer*
      *																		  *
      **************************************************************************/
     protected class HeaderControl extends StackPane {
