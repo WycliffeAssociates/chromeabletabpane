@@ -23,6 +23,7 @@ import com.jfoenix.controls.JFXTabPane;
 import javafx.scene.Node;
 import org.wycliffeassociates.skins.ChromeableTabPaneSkin;
 import javafx.scene.control.Skin;
+import java.util.Objects;
 
 /**
  * ChromeableTabPane is a modification of the JFoenix Material design TabPane that allows for
@@ -38,6 +39,7 @@ public class ChromeableTabPane extends JFXTabPane {
      * this control.
      */
     private static final String DEFAULT_STYLE_CLASS = "jfx-tab-pane";
+    private static final String STYLESHEET = "css/controls/otter-tab-pane.css";
 
     private Node chrome = null;
 
@@ -77,6 +79,13 @@ public class ChromeableTabPane extends JFXTabPane {
     @Override
     protected Skin<?> createDefaultSkin() {
         return new ChromeableTabPaneSkin(this, chrome, headerScalingFactor);
+    }
+
+    @Override
+    public String getUserAgentStylesheet() {
+        return Objects.requireNonNull(
+                Thread.currentThread().getContextClassLoader().getResource(STYLESHEET)
+        ).toExternalForm();
     }
 
     private void initialize() {
